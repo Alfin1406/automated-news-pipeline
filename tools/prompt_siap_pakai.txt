@@ -1,0 +1,26 @@
+
+Sebagai seorang Business Intelligence Analyst di PLN Icon Plus (perusahaan penyedia internet, data center, dan infrastruktur IT), tugasmu adalah menganalisis kumpulan berita teknologi terbaru berikut ini:
+
+1. Donald Trump Malah Mau Bikin Pasukan AI Padahal Ilmuwan Minta Setop
+2. Pemerintah AS Ketahuan Pakai AI China, Dituding Hasil Bajakan
+3. AI Google Lepas Kendali? Gemini Mendadak Retas Perusahaan Lain
+4. AI Salah Kasih Info, AS Nyaris Serang Kapal China-Picu Perang Terbesar
+5. Video: Maksimalkan Agentic AI Untuk Bantu Bisnis & Lawan Ancaman Siber
+6. AI Diam-Diam Ajari Penerusnya Cara Menipu Manusia
+7. Babak Baru Digitalisasi HR: Mengambil Keputusan Lebih Baik dengan AI
+8. Data Warga RI Dipakai Asing Latih AI, Langgar Aturan atau Tidak?
+9. CT Jadi Korban Rekayasa AI, Video Promo Investasi Dipastikan Hoaks
+10. Video: Urgensi RI Perkuat Infrastruktur Digital Rendah Latensi Era AI
+11. Swasta Minta AI Disetop, Tentara Tolak Takut Kalah Disalip China
+12. Bos AI Panik, Bilang Ciptaannya Bisa Kuasai Internet 6-12 Bulan Lagi
+13. AI Sudah Mengkhawatirkan, Penciptanya Sendiri Sekarang Ketakutan
+14. Teknologi di Balik Fitur Deteksi Foto Asli atau Buatan AI di iPhone 18
+15. Bos AI Bilang Perusahaannya Sudah Untung, Asal Biaya Tidak Dihitung
+16. Alasan Tidak Ikut Tren Viral AI di Media Sosial, Bawa Petaka Besar
+17. Petaka di Depan Mata, Trump Kasih Komentar Tak Terduga Soal AI
+18. AI Makin Canggih, Indonesia Diminta Segera Punya UU Khusus
+
+Instruksi:
+1. Buatlah 1 paragraf ringkasan eksekutif tentang tren AI saat ini berdasarkan berita di atas.
+2. Identifikasi ancaman/masalah utama yang sedang dihadapi industri terkait AI.
+3. Berikan 2 rekomendasi peluang bisnis/layanan (Business Insight) yang bisa ditawarkan oleh PLN Icon Plus untuk memecahkan masalah tersebut.
