@@ -9,7 +9,7 @@ x-airflow-common:
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     # API Key Gemini disematkan di sini agar aman dan terbaca oleh Python/Airflow
-    GEMINI_API_KEY: "ISI_API_KEY_DISINI"
+    GEMINI_API_KEY: ${GEMINI_API_KEY}
   volumes:
     - .:/opt/airflow/dags
   extra_hosts:
