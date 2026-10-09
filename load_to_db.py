@@ -1,8 +1,8 @@
 import json
 import pandas as pd
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text # Tambahkan import 'text'
 from sqlalchemy.types import String, Text, Integer, Date
-from sqlalchemy.dialects.postgresql import ARRAY # Import modul khusus Array PostgreSQL
+from sqlalchemy.dialects.postgresql import ARRAY 
 
 DATABASE_URL = "postgresql+psycopg2://postgres:alfin1406@host.docker.internal:5432/pln_intelligence_db"
 engine = create_engine(DATABASE_URL)
@@ -21,36 +21,67 @@ def main():
         return
 
     df = pd.DataFrame(data)
-    df = df.drop_duplicates(subset=['link'])
+    # Hapus duplikat di dalam file JSON itu sendiri
+    df = df.drop_duplicates(subset=['link']) 
     df['tanggal'] = pd.to_datetime(df['tanggal']).dt.date
 
-    # KONVERSI STRING DIPISAH KOMA MENJADI LIST PYTHON (UNTUK ARRAY POSTGRESQL)
     if 'teknologi_dibahas' in df.columns:
         df['teknologi_dibahas'] = df['teknologi_dibahas'].apply(
             lambda x: [i.strip() for i in x.split(',')] if isinstance(x, str) else x
         )
 
-    # SKEMA DATABASE DENGAN ARRAY & INTEGER STANDAR INDUSTRI
-    skema_database = {
-        'judul': Text(),
-        'tanggal': Date(),
-        'link': String(255),
-        'gambar': Text(),
-        'isi_berita': Text(),
-        'sumber': String(50),
-        'kategori_bisnis': String(100),
-        'ringkasan_ai': Text(),
-        'teknologi_dibahas': ARRAY(Text()),    # <-- ARRAY POSTGRESQL YANG PRESISI!
-        'kategori_lisensi': String(50),
-        'skor_relevansi_it': Integer()         # <-- INTEGER BIASA (BUKAN BIGINT)
-    }
+    print("Memulai True Incremental Load ke database...")
+    
+    # 1. Konversi DataFrame ke List of Dictionaries
+    data_to_insert = df.to_dict(orient='records')
+    
+    # 2. Buka koneksi langsung (raw connection)
+    with engine.begin() as connection:
+        berita_baru = 0
+        berita_duplikat = 0
+        
+        # 3. Looping untuk insert satu per satu dengan proteksi duplikasi
+        for baris in data_to_insert:
+            # Mengubah format list python ke format array postgres literal "{a,b,c}"
+            # Ini sangat penting agar PostgreSQL tidak error saat menerima Array
+            array_str = "{" + ",".join([f'"{t}"' for t in baris['teknologi_dibahas']]) + "}" if baris['teknologi_dibahas'] else "{}"
+            
+            query = text("""
+                INSERT INTO tabel_berita_ai (
+                    judul, tanggal, link, gambar, isi_berita, 
+                    sumber, kategori_bisnis, ringkasan_ai, 
+                    teknologi_dibahas, kategori_lisensi, skor_relevansi_it
+                ) VALUES (
+                    :judul, :tanggal, :link, :gambar, :isi_berita, 
+                    :sumber, :kategori_bisnis, :ringkasan_ai, 
+                    CAST(:teknologi_dibahas AS text[]), :kategori_lisensi, :skor_relevansi_it
+                )
+                ON CONFLICT (link) DO NOTHING
+            """)
+            
+            # Eksekusi dan tangkap hasilnya (apakah baris dimasukkan atau di-skip)
+            result = connection.execute(query, {
+                "judul": baris.get('judul', ''),
+                "tanggal": baris.get('tanggal'),
+                "link": baris['link'],
+                "gambar": baris.get('gambar', ''),
+                "isi_berita": baris.get('isi_berita', ''),
+                "sumber": baris.get('sumber', ''),
+                "kategori_bisnis": baris.get('kategori_bisnis', ''),
+                "ringkasan_ai": baris.get('ringkasan_ai', ''),
+                "teknologi_dibahas": array_str, # Menggunakan string literal array
+                "kategori_lisensi": baris.get('kategori_lisensi', ''),
+                "skor_relevansi_it": baris.get('skor_relevansi_it', 0)
+            })
+            
+            # Cek jika ada baris yang terpengaruh (artinya berhasil masuk)
+            if result.rowcount > 0:
+                berita_baru += 1
+            else:
+                berita_duplikat += 1
 
-    print("Memasukkan data ke database dengan skema Array dan Integer standar...")
-    
-    # MENGGUNAKAN APPEND & DTYPE AGAR TIPE DATA TIDAK BERUBAH OLEH PANDAS
-    df.to_sql('tabel_berita_ai', con=engine, if_exists='append', index=False, dtype=skema_database)
-    
-    print(f"✅ BINGO! {len(df)} data berhasil dimasukkan. Kolom teknologi berwujud ARRAY dan skor berwujud INT.")
+    print(f"✅ True Incremental Load Selesai!")
+    print(f"📊 Statistik: Masuk {berita_baru} berita baru | Menolak {berita_duplikat} berita lama (duplikat).")
 
 if __name__ == "__main__":
     main()
