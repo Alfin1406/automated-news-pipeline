@@ -3,25 +3,17 @@ import pandas as pd
 from sqlalchemy import create_engine
 import google.generativeai as genai
 from datetime import datetime, timedelta
-import plotly.express as px  # <-- Library baru untuk grafik pro
+import plotly.express as px
 
 # Mengambil API Key dari brankas rahasia Streamlit
 api_key = st.secrets.get("GEMINI_API_KEY")
 
-st.set_page_config(page_title="AI & Data Intelligence", page_icon="📊", layout="wide")
-
-# === JUDUL & GLOBAL FILTER DI POJOK KANAN ATAS ===
-col_judul, col_filter_global = st.columns([3, 1])
-
-with col_judul:
-    st.title("📊 Dashboard Intelijen Bisnis: AI & Data Infrastruktur")
-    st.markdown("Platform pemantauan tren teknologi otonom untuk mendukung strategi inovasi dan penjualan PLN Icon Plus.")
+st.set_page_config(page_title="AI & Data Intelligence", page_icon="📊", layout="wide", initial_sidebar_state="expanded")
 
 @st.cache_data(ttl=600)
 def load_data():
     DATABASE_URL = "postgresql+psycopg2://postgres:alfin1406@localhost:5432/pln_intelligence_db"
     engine = create_engine(DATABASE_URL)
-    
     try:
         query = "SELECT * FROM tabel_berita_ai ORDER BY tanggal DESC"
         df = pd.read_sql(query, con=engine)
@@ -30,7 +22,6 @@ def load_data():
             return df
     except Exception as e:
         st.error(f"⚠️ Gagal terhubung ke Database PostgreSQL. Error: {e}")
-        
     return pd.DataFrame()
 
 df = load_data()
@@ -39,13 +30,10 @@ df = load_data()
 def generate_ai_summary(dataframe):
     if not api_key:
         return "⚠️ API Key Gemini belum diatur di secrets.toml."
-    
     genai.configure(api_key=api_key)
     model = genai.GenerativeModel('gemini-3.5-flash-lite')
     
-    teks_berita = ""
-    for index, row in dataframe.head(15).iterrows():
-        teks_berita += f"- {row['judul']}: {str(row.get('ringkasan_ai', ''))}\n"
+    teks_berita = "".join([f"- {row['judul']}: {str(row.get('ringkasan_ai', ''))}\n" for index, row in dataframe.head(15).iterrows()])
         
     prompt = f"""
     Kamu adalah seorang Analis Bisnis Senior di PLN Icon Plus. 
@@ -60,135 +48,149 @@ def generate_ai_summary(dataframe):
     2. 2 Rekomendasi Peluang Bisnis untuk PLN Icon Plus berdasarkan tren tersebut (gunakan bullet points).
     Gunakan bahasa Indonesia yang profesional dan lugas.
     """
-    
     try:
-        response = model.generate_content(prompt)
-        return response.text
+        return model.generate_content(prompt).text
     except Exception as e:
         return f"Gagal menghasilkan laporan eksekutif. Error: {e}"
 
 @st.dialog("✨ Laporan Eksekutif AI (Tren 14 Hari Terakhir)")
 def popup_laporan_ai(dataframe):
     st.info(f"🤖 Menganalisis {len(dataframe)} berita terhangat. Mohon tunggu beberapa detik...")
-    hasil_ai = generate_ai_summary(dataframe)
-    st.success("Analisis selesai!")
-    st.write(hasil_ai)
+    st.write(generate_ai_summary(dataframe))
 
-# --- LOGIKA DASHBOARD UTAMA ---
+# ==========================================
+# LOGIKA DASHBOARD UTAMA
+# ==========================================
 if not df.empty:
-    with col_filter_global:
-        st.write("") 
-        pilihan_sumber = st.multiselect(
-            "🏢 Filter Sumber Berita:", 
-            options=df['sumber'].unique(), 
-            default=df['sumber'].unique()
-        )
+    def parse_topik(x):
+        if isinstance(x, list): return x
+        if isinstance(x, str):
+            x = x.strip('{}[]').replace('"', '').replace("'", "")
+            return [i.strip() for i in x.split(',')] if x else []
+        return []
         
-    st.divider()
+    df['teknologi_dibahas_list'] = df['teknologi_dibahas'].apply(parse_topik)
+    semua_topik_unik = sorted(list(set(x for l in df['teknologi_dibahas_list'] for x in l)))
+    lisensi_unik = [l for l in df['kategori_lisensi'].dropna().unique() if l.strip() != '']
 
-    df_global = df[df['sumber'].isin(pilihan_sumber)]
+    # ==========================================
+    # SIDEBAR KONTROL (BERSIH & MINIMALIS)
+    # ==========================================
+    with st.sidebar:
+        st.title("⚙️ Panel Kontrol")
+        st.markdown("Biarkan kosong untuk menampilkan **Semua Data**.")
+        
+        st.markdown("**1. Filter Global (Grafik & Metrik)**")
+        # Default diubah menjadi kosong []
+        pilihan_sumber = st.multiselect("🏢 Sumber Berita", options=df['sumber'].unique(), default=[], placeholder="Pilih sumber...")
+        pilihan_topik = st.multiselect("🏷️ Topik / Subtopic", options=semua_topik_unik, default=[], placeholder="Pilih topik...")
+        
+        st.markdown("---")
+        st.markdown("**2. Filter Arsip (Khusus Berita Bawah)**")
+        lisensi_pilihan = st.multiselect("📜 Kategori Lisensi", options=lisensi_unik, default=[], placeholder="Pilih lisensi...")
+        
+        st.markdown("---")
+        st.caption("PLN Icon Plus - AI Intelligence 2026")
+
+    # ==========================================
+    # KONTEN UTAMA
+    # ==========================================
+    st.title("📊 Dashboard Intelijen Bisnis: AI & Data")
+    st.markdown("Platform pemantauan tren teknologi otonom untuk mendukung strategi inovasi PLN Icon Plus.")
+    st.divider()
+    
+    # --- APLIKASI FILTER LOGIKA "KOSONG = SEMUA" ---
+    # Jika pilihan_sumber kosong, pakai semua sumber. Jika ada isinya, filter sesuai isi.
+    df_global = df[df['sumber'].isin(pilihan_sumber)] if pilihan_sumber else df.copy()
+    
+    # Jika pilihan_topik kosong, abaikan filter. Jika ada isinya, saring array-nya.
+    if pilihan_topik:
+        df_global = df_global[df_global['teknologi_dibahas_list'].apply(lambda x: any(item in pilihan_topik for item in x))]
     
     if df_global.empty:
-        st.warning("Pilih setidaknya satu sumber berita untuk menampilkan data dashboard.")
+        st.warning("Data kosong berdasarkan filter di Sidebar. Silakan sesuaikan pilihan Anda.")
     else:
-        # === METRIK ATAS ===
-        col1, col2, col3 = st.columns(3)
-        col1.metric("Total Berita (Terfilter)", f"{len(df_global)} Artikel")
-        col2.metric("Sumber Data Aktif", df_global['sumber'].nunique())
-        col3.metric("Fokus Sektor", "AI & Data Infrastruktur")
+        # === METRIK (LEBIH LUAS KARENA TOMBOL AI DIPINDAH) ===
+        col_m1, col_m2, col_m3 = st.columns(3)
+        col_m1.metric("Total Berita", f"{len(df_global)} Artikel Terkumpul")
+        col_m2.metric("Sumber Aktif", f"{df_global['sumber'].nunique()} Portal Berita")
+        col_m3.metric("Fokus Data", "AI & Infrastruktur")
         
-        # === FITUR BARU: LINE CHART PLOTLY (TERKUNCI & BERDASARKAN MINGGU) ===
-        st.markdown("---")
-        st.subheader("📈 Tren Publikasi Berita AI")
-        st.caption("Jumlah pemberitaan AI & Data Infrastruktur berdasarkan Minggu")
+        st.markdown("<br>", unsafe_allow_html=True) # Jarak estetik
         
-        df_chart = df_global.copy()
-        
-        # 1. Mengelompokkan data per 1 Minggu ('W'). (Ganti 'W' menjadi '2W' jika mentor ngotot ingin 14 hari)
-        df_chart['Minggu'] = df_chart['tanggal'].dt.to_period('2W').apply(lambda r: r.start_time)
-        tren_mingguan = df_chart.groupby('Minggu').size().reset_index(name='Jumlah Artikel')
-        
-        # 2. Mengubah tanggal menjadi string (Kategori) agar sumbu X terkunci persis seperti kategori berita
-        tren_mingguan['Minggu'] = tren_mingguan['Minggu'].dt.strftime('%Y-%m-%d')
-        
-        # 3. Menggambar grafik menggunakan Plotly (Lebih pro dan ada titiknya)
-        fig = px.line(
-            tren_mingguan, 
-            x='Minggu', 
-            y='Jumlah Artikel',
-            markers=True # Memunculkan titik-titik di garis
-        )
-        
-        # 4. Mematikan fitur Zoom dan Pan agar sumbu X tetap (STAY) tidak bergeser
-        fig.update_layout(
-            xaxis=dict(fixedrange=True, type='category'), # type='category' memaksa tulisan tanggal diam di tempat
-            yaxis=dict(fixedrange=True),
-            margin=dict(l=0, r=0, t=10, b=0),
-            hovermode="x unified"
-        )
-        
-        st.plotly_chart(fig, use_container_width=True)
-        st.markdown("---")
-
-        col_exec, col_trend = st.columns([1.5, 1])
-        
-        with col_exec:
-            st.subheader("💡 Laporan Eksekutif Bisnis")
-            st.markdown("Klik tombol di bawah ini untuk meminta AI menganalisis tren 2 minggu terakhir secara *on-demand*.")
-            
-            if st.button("🤖 Generate Laporan Bisnis AI", use_container_width=True):
+        # === TOMBOL AI (Eksklusif di Tengah) ===
+        col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
+        with col_btn2: # Menempatkan tombol persis di tengah agar elegan
+            if st.button("🤖 Generate Laporan Eksekutif AI (14 Hari Terakhir)", use_container_width=True, type="primary"):
                 batas_14_hari = pd.Timestamp.now().normalize() - pd.Timedelta(days=14)
                 df_2_minggu = df_global[df_global['tanggal'] >= batas_14_hari]
-                
-                if df_2_minggu.empty:
-                    st.warning("Tidak ada data berita relevan dalam 14 hari terakhir.")
-                else:
-                    popup_laporan_ai(df_2_minggu)
-                
+                if df_2_minggu.empty: st.warning("Tidak ada data dalam 14 hari terakhir.")
+                else: popup_laporan_ai(df_2_minggu)
+        
+        st.markdown("---")
+        
+        # === GRAFIK ===
+        col_trend, col_dist = st.columns([1.5, 1])
+        
         with col_trend:
-            st.subheader("🎯 Distribusi Lisensi AI")
-            st.markdown("Perbandingan jumlah artikel berdasarkan kategori lisensi:")
+            st.subheader("📈 Tren Publikasi")
+            df_chart = df_global.copy()
+            # Tetap dikelompokkan per 2 minggu
+            df_chart['Minggu'] = df_chart['tanggal'].dt.to_period('W').apply(lambda r: r.start_time)
+            tren_mingguan = df_chart.groupby('Minggu').size().reset_index(name='Jumlah Artikel')
             
-            lisensi_count = df_global['kategori_lisensi'].value_counts().reset_index()
-            lisensi_count.columns = ['Kategori Lisensi', 'Jumlah Artikel']
-            st.dataframe(lisensi_count, hide_index=True, use_container_width=True)
-                
-        st.divider()
+            # MEMPERBAIKI SUMBU X: Biarkan format datetime agar Plotly pintar mengaturnya
+            fig_line = px.line(tren_mingguan, x='Minggu', y='Jumlah Artikel', markers=True, height=350)
+            fig_line.update_layout(
+                xaxis=dict(
+                    title="",
+                    tickformat="%d %b %Y", # Format cantik: 15 Oct 2026
+                    showgrid=False
+                ), 
+                yaxis=dict(title="Jumlah Artikel", fixedrange=True), 
+                margin=dict(l=0, r=0, t=10, b=0), 
+                hovermode="x unified"
+            )
+            st.plotly_chart(fig_line, use_container_width=True)
 
-        # === ARSIP BERITA TERKINI ===
-        st.subheader("📰 Arsip Berita Terkini")
+        with col_dist:
+            st.subheader("📊 Distribusi Subtopic")
+            df_exploded = df_global.explode('teknologi_dibahas_list')
+            if pilihan_topik:
+                df_exploded = df_exploded[df_exploded['teknologi_dibahas_list'].isin(pilihan_topik)]
+                
+            topik_count = df_exploded['teknologi_dibahas_list'].value_counts().reset_index()
+            topik_count.columns = ['Subtopic', 'Jumlah']
+            
+            fig_bar = px.bar(topik_count, x='Jumlah', y='Subtopic', orientation='h', text='Jumlah', color_discrete_sequence=['#3b82f6'], height=350)
+            fig_bar.update_layout(yaxis={'categoryorder':'total ascending'}, xaxis_title="", yaxis_title="", margin=dict(l=0, r=0, t=10, b=0))
+            st.plotly_chart(fig_bar, use_container_width=True)
+
+        st.markdown("---")
+
+        # === ARSIP BERITA ===
+        st.subheader("📰 Arsip Berita Publikasi")
         
-        lisensi_unik = [l for l in df_global['kategori_lisensi'].dropna().unique() if l.strip() != '']
-        lisensi_pilihan = st.multiselect("Filter Lisensi AI Spesifik:", options=lisensi_unik, default=lisensi_unik)
-        
-        df_filtered_archive = df_global[df_global['kategori_lisensi'].isin(lisensi_pilihan)]
+        # Filter logika "Kosong = Semua" untuk lisensi
+        df_filtered_archive = df_global[df_global['kategori_lisensi'].isin(lisensi_pilihan)] if lisensi_pilihan else df_global.copy()
 
         for index, row in df_filtered_archive.iterrows():
             with st.container():
-                col_img, col_txt = st.columns([1, 4])
-                
+                col_img, col_txt = st.columns([1, 5])
                 with col_img:
                     if 'gambar' in row and pd.notna(row['gambar']) and str(row['gambar']).startswith('http'):
                         st.image(str(row['gambar']), use_container_width=True)
                     else:
-                        st.image("https://via.placeholder.com/400x250?text=Tidak+Ada+Gambar", use_container_width=True)
+                        st.image("https://via.placeholder.com/400x250?text=No+Image", use_container_width=True)
                         
                 with col_txt:
-                    st.subheader(row['judul'])
-                    tgl_format = row['tanggal'].strftime('%Y-%m-%d') if pd.notna(row['tanggal']) else 'Tidak diketahui'
-                    st.caption(f"📅 {tgl_format} | 🏢 Sumber: **{row.get('sumber', 'Portal Berita')}**")
-                    st.write(str(row.get('ringkasan_ai', 'Rangkuman tidak tersedia.')))
+                    st.markdown(f"**{row['judul']}**")
+                    tgl_format = row['tanggal'].strftime('%d %b %Y') if pd.notna(row['tanggal']) else 'Tidak diketahui'
+                    st.caption(f"📅 {tgl_format} | 🏢 **{row.get('sumber', 'Portal Berita')}** | 📜 {row.get('kategori_lisensi', '-')}")
                     
-                    topik_mentah = row.get('teknologi_dibahas', [])
-                    if isinstance(topik_mentah, (list, tuple)) or type(topik_mentah).__name__ == 'ndarray':
-                        topik_rapi = ", ".join(topik_mentah) if len(topik_mentah) > 0 else "-"
-                    else:
-                        topik_rapi = str(topik_mentah)
-                    
-                    st.markdown(f"**🏷️ Topik/Teknologi:** `{topik_rapi}`  |  **📜 Lisensi:** `{row.get('kategori_lisensi', '-')}`")
-                    st.markdown(f"[🔗 Baca Artikel Asli di Sini]({row['link']})")
-                    
-            st.markdown("---")
-
+                    topik_rapi = ", ".join(row['teknologi_dibahas_list']) if len(row['teknologi_dibahas_list']) > 0 else "-"
+                    st.write(f"<span style='font-size: 14px;'>{str(row.get('ringkasan_ai', ''))}</span>", unsafe_allow_html=True)
+                    st.markdown(f"<span style='font-size: 12px; color: #888;'>🏷️ {topik_rapi} &nbsp;|&nbsp; <a href='{row['link']}' style='color:#3b82f6; text-decoration:none;'>🔗 Baca Artikel Asli</a></span>", unsafe_allow_html=True)
+            st.divider()
 else:
     st.error("Belum ada data di PostgreSQL. Pastikan skrip load_to_db.py sudah dijalankan.")
