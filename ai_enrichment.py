@@ -11,10 +11,18 @@ engine = create_engine(DATABASE_URL)
 # KAMUS KATA KUNCI (BILINGUAL ID & EN)
 # ==========================================
 KAMUS_TOPIK = {
+    # --- Topik Fundamental untuk Scoring IT ---
     "Technology": ["ai", "artificial intelligence", "kecerdasan buatan", "machine learning", "algoritma", "model bahasa", "llm", "neural network", "deep learning"],
     "Infrastructure": ["data center", "pusat data", "cloud", "server", "gpu", "nvidia", "komputasi", "jaringan", "infrastruktur", "compute", "chips", "semiconductor"],
     "Energy": ["air", "listrik", "pln", "energi", "karbon", "pembangkit", "jatiluhur", "ramah lingkungan", "emisi", "energy", "power", "nuclear", "grid", "emission"],
-    "Investment": ["investasi", "triliun", "miliar", "dana", "saham", "startup", "akuisisi", "proyek", "investor", "ekonomi", "investment", "funding", "billion", "million", "acquisition", "valuation"]
+    "Investment": ["investasi", "triliun", "miliar", "dana", "saham", "startup", "akuisisi", "proyek", "investor", "ekonomi", "investment", "funding", "billion", "million", "acquisition", "valuation"],
+    
+    # --- SUBTOPIC KHUSUS (AI & Data Infrastruktur) ---
+    "Generative AI & LLM": ["llm", "large language model", "genai", "generative ai", "chatgpt", "gemini", "claude", "llama", "hugging face", "mistral", "prompt"],
+    "AI Hardware & Chips": ["gpu", "nvidia", "amd", "tpu", "chip", "semiconductor", "tensor", "silicon", "perangkat keras ai"],
+    "Data Center & Cloud": ["data center", "pusat data", "aws", "azure", "google cloud", "cloud computing", "komputasi awan", "server", "hosting"],
+    "AI Regulation & Ethics": ["regulasi", "undang-undang", "etika", "bias ai", "hak cipta", "legalitas", "kebijakan", "keamanan data", "privasi", "reputasi"],
+    "Cyber Security in AI": ["ransomware", "hacker", "peretas", "malware", "phishing", "kebocoran data", "serangan siber", "cyber threat"]
 }
 
 KAMUS_LISENSI = {

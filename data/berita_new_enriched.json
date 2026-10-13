@@ -11,7 +11,8 @@
         "teknologi_dibahas": [
             "Technology",
             "Infrastructure",
-            "Energy"
+            "Energy",
+            "Data Center & Cloud"
         ],
         "kategori_lisensi": "Tidak Diketahui",
         "skor_relevansi_it": 85
@@ -28,7 +29,8 @@
         "teknologi_dibahas": [
             "Technology",
             "Infrastructure",
-            "Energy"
+            "Energy",
+            "Data Center & Cloud"
         ],
         "kategori_lisensi": "Tidak Diketahui",
         "skor_relevansi_it": 85
@@ -43,7 +45,8 @@
         "kategori_bisnis": "AI & Data Infrastruktur",
         "ringkasan_ai": "Google telah meluncurkan platform AI terbaru yang memungkinkan pengguna membuat dan memainkan game tapa perlu paham cara coding. Nama platformnya ialah Playground. Namun platform ini belum tersedia di Indonesia, karena negara pertama yang akan...",
         "teknologi_dibahas": [
-            "Technology"
+            "Technology",
+            "AI Regulation & Ethics"
         ],
         "kategori_lisensi": "Tidak Diketahui",
         "skor_relevansi_it": 85
@@ -59,7 +62,9 @@
         "ringkasan_ai": "Karya tulis ilmiah yang dipublikasikan melalui beberapa penerbit bakal dibagikan ke sebuah perusahaan AI (Artificial Intelligence) di Swedia. Setidaknya, terdapat enam penerbit yang bersedia membuka aksesnya terhadap perusahaan tersebut. Per 6...",
         "teknologi_dibahas": [
             "Technology",
-            "Infrastructure"
+            "Infrastructure",
+            "Data Center & Cloud",
+            "AI Regulation & Ethics"
         ],
         "kategori_lisensi": "Komersil",
         "skor_relevansi_it": 100
@@ -76,7 +81,9 @@
         "teknologi_dibahas": [
             "Technology",
             "Infrastructure",
-            "Energy"
+            "Energy",
+            "Generative AI & LLM",
+            "AI Hardware & Chips"
         ],
         "kategori_lisensi": "Komersil",
         "skor_relevansi_it": 100
@@ -93,7 +100,10 @@
         "teknologi_dibahas": [
             "Technology",
             "Infrastructure",
-            "Energy"
+            "Energy",
+            "Generative AI & LLM",
+            "AI Hardware & Chips",
+            "Data Center & Cloud"
         ],
         "kategori_lisensi": "Komersil",
         "skor_relevansi_it": 100
