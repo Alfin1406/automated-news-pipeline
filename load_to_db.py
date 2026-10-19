@@ -3,6 +3,7 @@ import pandas as pd
 from sqlalchemy import create_engine, text # Tambahkan import 'text'
 from sqlalchemy.types import String, Text, Integer, Date
 from sqlalchemy.dialects.postgresql import ARRAY 
+from datetime import datetime
 
 DATABASE_URL = "postgresql+psycopg2://postgres:alfin1406@host.docker.internal:5432/pln_intelligence_db"
 engine = create_engine(DATABASE_URL)
@@ -50,11 +51,13 @@ def main():
                 INSERT INTO tabel_berita_ai (
                     judul, tanggal, link, gambar, isi_berita, 
                     sumber, kategori_bisnis, ringkasan_ai, 
-                    teknologi_dibahas, kategori_lisensi, skor_relevansi_it
+                    teknologi_dibahas, kategori_lisensi, skor_relevansi_it,
+                    waktu_scrape
                 ) VALUES (
                     :judul, :tanggal, :link, :gambar, :isi_berita, 
                     :sumber, :kategori_bisnis, :ringkasan_ai, 
-                    CAST(:teknologi_dibahas AS text[]), :kategori_lisensi, :skor_relevansi_it
+                    CAST(:teknologi_dibahas AS text[]), :kategori_lisensi, :skor_relevansi_it,
+                    :waktu_scrape
                 )
                 ON CONFLICT (link) DO NOTHING
             """)
@@ -71,7 +74,8 @@ def main():
                 "ringkasan_ai": baris.get('ringkasan_ai', ''),
                 "teknologi_dibahas": array_str, # Menggunakan string literal array
                 "kategori_lisensi": baris.get('kategori_lisensi', ''),
-                "skor_relevansi_it": baris.get('skor_relevansi_it', 0)
+                "skor_relevansi_it": baris.get('skor_relevansi_it', 0),
+                "waktu_scrape": datetime.now()
             })
             
             # Cek jika ada baris yang terpengaruh (artinya berhasil masuk)

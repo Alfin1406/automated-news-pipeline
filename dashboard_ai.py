@@ -5,6 +5,9 @@ import google.generativeai as genai
 from datetime import datetime, timedelta
 import plotly.express as px
 
+# IMPORT MODUL AI SUMMARY YANG BARU DIBUAT
+from fitur_ai_summary import render_fitur_ai_summary
+
 # Mengambil API Key dari brankas rahasia Streamlit
 api_key = st.secrets.get("GEMINI_API_KEY")
 
@@ -113,6 +116,18 @@ if not df.empty:
     # KONTEN UTAMA
     # ==========================================
     st.title("📊 Dashboard Intelijen Bisnis: AI & Data")
+    
+    # IMPLEMENTASI ARAHAN MENTOR: Membaca kolom waktu_scrape dari Database
+    if 'waktu_scrape' in df.columns and not df['waktu_scrape'].isna().all():
+        # Ambil waktu paling terbaru dari pipeline
+        waktu_run = pd.to_datetime(df['waktu_scrape'].max())
+        tanggal_terakhir = waktu_run.strftime('%d %B %Y, %H:%M WIB')
+    else:
+        # Fallback jika data waktu_scrape kosong
+        tanggal_terakhir = df['tanggal'].max().strftime('%d %B %Y')
+        
+    st.caption(f"🗓️ **Periode Pengambilan Data Terakhir:** {tanggal_terakhir}")
+    
     st.markdown("Platform pemantauan tren teknologi otonom untuk mendukung strategi inovasi PLN Icon Plus.")
     st.divider()
     
@@ -133,7 +148,7 @@ if not df.empty:
         
         st.markdown("<br>", unsafe_allow_html=True) 
         
-        # === TOMBOL AI ===
+        # === TOMBOL AI GLOBAL ===
         col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
         with col_btn2: 
             if st.button("🤖 Generate Laporan Eksekutif AI (14 Hari Terakhir)", use_container_width=True, type="primary"):
@@ -178,6 +193,16 @@ if not df.empty:
             st.plotly_chart(fig_bar, use_container_width=True)
             st.caption("*Catatan: Satu artikel dapat memiliki lebih dari satu subtopik (Multi-label).*")
 
+        # ==========================================
+        # PEMANGGILAN KOMPONEN BARU: AI SUMMARY PER SUBTOPIC
+        # ==========================================
+        # Menyiapkan kolom 'subtopic' karena modul `fitur_ai_summary.py` mengincar nama tersebut
+        df_untuk_ai = df_global.copy()
+        if 'teknologi_dibahas_list' in df_untuk_ai.columns:
+            df_untuk_ai['subtopic'] = df_untuk_ai['teknologi_dibahas_list']
+            
+        render_fitur_ai_summary(df_untuk_ai, semua_topik_unik)
+        
         st.markdown("---")
 
         # === ARSIP BERITA (GRID 3 KOLOM & PAGINASI LENGKAP) ===
