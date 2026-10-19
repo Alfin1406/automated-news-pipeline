@@ -2,3 +2,11 @@ venv/
 __pycache__/
 .streamlit/secrets.toml
 .env
+
+# File kompilasi Python tambahan
+*.pyc
+*.pyo
+*.pyd
+
+# Pengaturan lokal VS Code (agar setelan komputermu tidak menimpa setelan Arza/Atha nanti)
+.vscode/
