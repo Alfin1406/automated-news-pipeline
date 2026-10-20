@@ -3,6 +3,7 @@ import pandas as pd
 import datetime
 import google.generativeai as genai
 
+@st.cache_data(show_spinner="Gemini sedang menyusun laporan intelijen bisnis...")
 def panggil_gemini_api(teks_berita, subtopic):
     """Fungsi untuk memanggil API Gemini dan mendapatkan ringkasan terstruktur."""
     
@@ -62,7 +63,9 @@ def tampilkan_artikel_pendukung(df):
                 st.markdown(f"**{row['judul']}**")
                 
                 tanggal_str = row['tanggal'].strftime('%Y-%m-%d') if hasattr(row['tanggal'], 'strftime') else str(row['tanggal'])
-                st.caption(f"{row['sumber']} • {tanggal_str}")
+                
+                # PERBAIKAN DI SINI: Hapus tanda minus dan perbaiki format string
+                st.caption(f"{row['sumber']} \n {tanggal_str}")
                 
                 # Render tautan baca
                 link = row.get('url', '#')
@@ -108,27 +111,22 @@ def render_fitur_ai_summary(df, daftar_subtopic):
         elif tanggal_awal > tanggal_akhir:
             st.error("⚠️ Tanggal Awal tidak boleh lebih besar dari Tanggal Akhir.")
         else:
-            with st.spinner(f"Gemini sedang menyusun laporan intelijen bisnis untuk '{pilihan_subtopic}'..."):
+            # Filter DataFrame
+            df['tanggal'] = pd.to_datetime(df['tanggal'])
+            mask_tanggal = (df['tanggal'].dt.date >= tanggal_awal) & (df['tanggal'].dt.date <= tanggal_akhir)
+            mask_subtopic = df['subtopic'].apply(lambda x: pilihan_subtopic in x if isinstance(x, list) else pilihan_subtopic == x)
+            df_filter = df[mask_tanggal & mask_subtopic]
+            
+            if df_filter.empty:
+                st.warning(f"Tidak ada berita untuk subtopik '{pilihan_subtopic}' pada rentang {tanggal_awal} hingga {tanggal_akhir}.")
+            else:
+                st.success(f"Memproses analisis untuk {len(df_filter)} artikel...")
                 
-                # Pastikan format tipe data sudah datetime
-                df['tanggal'] = pd.to_datetime(df['tanggal'])
+                teks_prompt = gabungkan_berita(df_filter)
                 
-                # Filter DataFrame berdasarkan tanggal
-                mask_tanggal = (df['tanggal'].dt.date >= tanggal_awal) & (df['tanggal'].dt.date <= tanggal_akhir)
+                # Memanggil API. Jika data sudah ada di cache, st.cache_data tidak akan memunculkan spinner
+                # dan akan langsung mengembalikan hasil dalam hitungan milidetik.
+                hasil_analisis = panggil_gemini_api(teks_prompt, pilihan_subtopic)
                 
-                # Filter DataFrame berdasarkan Subtopik (Mendukung tipe data Array/List)
-                mask_subtopic = df['subtopic'].apply(lambda x: pilihan_subtopic in x if isinstance(x, list) else pilihan_subtopic == x)
-                
-                df_filter = df[mask_tanggal & mask_subtopic]
-                
-                if df_filter.empty:
-                    st.warning(f"Tidak ada berita untuk subtopik '{pilihan_subtopic}' pada rentang {tanggal_awal} hingga {tanggal_akhir}.")
-                else:
-                    st.success(f"Memproses analisis untuk {len(df_filter)} artikel...")
-                    
-                    # Eksekusi AI dan tampilkan hasilnya
-                    teks_prompt = gabungkan_berita(df_filter)
-                    hasil_analisis = panggil_gemini_api(teks_prompt, pilihan_subtopic)
-                    
-                    st.markdown(hasil_analisis)
-                    tampilkan_artikel_pendukung(df_filter)
+                st.markdown(hasil_analisis)
+                tampilkan_artikel_pendukung(df_filter)
