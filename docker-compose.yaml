@@ -11,7 +11,7 @@ x-airflow-common:
     # API Key Gemini disematkan di sini agar aman dan terbaca oleh Python/Airflow
     GEMINI_API_KEY: ${GEMINI_API_KEY}
   volumes:
-    - .:/opt/airflow/dags
+  - ./dags:/opt/airflow/dags
   extra_hosts:
     - "host.docker.internal:host-gateway"
   depends_on:
