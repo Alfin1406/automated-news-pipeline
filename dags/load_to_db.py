@@ -5,7 +5,7 @@ from sqlalchemy.types import String, Text, Integer, Date
 from sqlalchemy.dialects.postgresql import ARRAY 
 from datetime import datetime
 
-DATABASE_URL = "postgresql+psycopg2://postgres:alfin1406@host.docker.internal:5432/pln_intelligence_db"
+DATABASE_URL="postgresql://dashboard_app:Dashboard_abcdE123KikzBr!a@ep-weathered-frog-a11ytamu.ap-southeast-1.aws.neon.tech:5432/sector_growth_clean?sslmode=require"
 engine = create_engine(DATABASE_URL)
 
 def main():

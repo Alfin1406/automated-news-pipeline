@@ -8,10 +8,14 @@ x-airflow-common:
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    # 1. Kunci rahasia permanen agar log tidak error 403 lagi:
+    AIRFLOW__WEBSERVER__SECRET_KEY: 'rahasia_negara_123'
+    # 2. Instalasi otomatis library yang dibutuhkan script kamu:
+    _PIP_ADDITIONAL_REQUIREMENTS: 'requests beautifulsoup4 pandas psycopg2-binary sqlalchemy google-genai'
     # API Key Gemini disematkan di sini agar aman dan terbaca oleh Python/Airflow
     GEMINI_API_KEY: ${GEMINI_API_KEY}
   volumes:
-  - ./dags:/opt/airflow/dags
+    - ./dags:/opt/airflow/dags
   extra_hosts:
     - "host.docker.internal:host-gateway"
   depends_on:
