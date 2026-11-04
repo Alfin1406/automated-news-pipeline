@@ -14,6 +14,13 @@ x-airflow-common:
     _PIP_ADDITIONAL_REQUIREMENTS: 'requests beautifulsoup4 pandas psycopg2-binary sqlalchemy google-genai'
     # API Key Gemini disematkan di sini agar aman dan terbaca oleh Python/Airflow
     GEMINI_API_KEY: ${GEMINI_API_KEY}
+    # 3. Kredensial Neon DB agar terbaca oleh script load_to_db.py
+    POSTGRES_HOST: ${POSTGRES_HOST}
+    POSTGRES_PORT: ${POSTGRES_PORT}
+    POSTGRES_DB: ${POSTGRES_DB}
+    POSTGRES_USER: ${POSTGRES_USER}
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    POSTGRES_SSLMODE: ${POSTGRES_SSLMODE}
   volumes:
     - ./dags:/opt/airflow/dags
   extra_hosts:
